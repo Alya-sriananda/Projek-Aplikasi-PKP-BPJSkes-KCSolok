@@ -13,6 +13,7 @@ use Illuminate\Support\Carbon;
 use Laravel\Fortify\Contracts\PasskeyUser;
 use Laravel\Fortify\PasskeyAuthenticatable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property int $id
@@ -46,5 +47,15 @@ class User extends Authenticatable implements PasskeyUser
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
         ];
+    }
+
+    public function verifikasiSipp(): HasMany
+    {
+        return $this->hasMany(VerifikasiSipp::class);
+    }
+
+    public function komunikasi(): HasMany
+    {
+        return $this->hasMany(Komunikasi::class);
     }
 }
