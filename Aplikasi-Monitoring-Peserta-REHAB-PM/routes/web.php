@@ -1,11 +1,20 @@
 <?php
 
+use App\Imports\PesertaImport;
 use Illuminate\Support\Facades\Route;
+use Maatwebsite\Excel\Facades\Excel;
+    Route::get('/test-import', function () {
+        return view('test-import');
+    });
+    Route::post('/test-import', function () {
+        request()->validate([
+            'file' => ['required', 'file', 'mimes:xlsx,xls,csv'],
+        ]);
 
-Route::inertia('/', 'Welcome')->name('home');
+        Excel::import(
+            new PesertaImport,
+            request()->file('file')
+        );
 
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::inertia('dashboard', 'Dashboard')->name('dashboard');
-});
-
-require __DIR__.'/settings.php';
+        return 'Import selesai';
+    });
