@@ -3,6 +3,7 @@
 use App\Http\Controllers\BatchController;
 use App\Http\Controllers\VerifikasiSippController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\MonitoringController;
 
 Route::inertia('/', 'Welcome')->name('home');
 
@@ -64,3 +65,8 @@ Route::middleware('auth')->group(function () {
     ])->name('verifikasi-sipp.store');
 
 });
+
+Route::get('/batches/{batch}/monitoring', [
+    MonitoringController::class,
+    'index'
+])->name('monitoring.index');

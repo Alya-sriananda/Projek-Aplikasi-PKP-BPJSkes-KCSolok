@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Peserta extends Model
 {
@@ -40,11 +41,16 @@ class Peserta extends Model
         return $this->hasMany(VerifikasiSipp::class);
     }
 
-    public function verifikasiTerakhir()
+    public function verifikasiTerakhir(): HasOne
     {
         return $this->hasOne(VerifikasiSipp::class)
-            ->latestOfMany();
+            ->latestOfMany('tanggal_cek');
     }
+    // public function verifikasiTerakhir()
+    // {
+    //     return $this->hasOne(VerifikasiSipp::class)
+    //         ->latestOfMany();
+    // }
 
     public function komunikasi(): HasMany
     {
