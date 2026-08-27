@@ -11,6 +11,19 @@ use Maatwebsite\Excel\Facades\Excel;
 class BatchController extends Controller
 {
     /**
+     * Menampilkan daftar seluruh batch import.
+     */
+    public function index()
+    {
+        $batches = Batch::withCount('pesertas')
+            ->latest('tanggal_data')
+            ->latest('id')
+            ->paginate(10);
+
+        return view('batches.index', compact('batches'));
+    }
+
+    /**
      * Halaman upload Excel.
      */
     public function create()
@@ -19,12 +32,36 @@ class BatchController extends Controller
     }
 
     /**
+     * Menampilkan detail satu batch beserta peserta di dalamnya.
+     */
+    public function show(Batch $batch)
+    {
+        $batch->load([
+            'pesertas' => function ($query) {
+                $query->orderBy('nama');
+            }
+        ]);
+
+        return view('batches.show', compact('batch'));
+    }
+
+    /**
      * Proses import Excel.
      */
     public function store(Request $request)
     {
+        /*
+        |--------------------------------------------------------------------------
+        | 1. VALIDASI INPUT
+        |--------------------------------------------------------------------------
+        */
+
         $validated = $request->validate([
-            'tanggal_data' => ['required', 'date'],
+            'tanggal_data' => [
+                'required',
+                'date',
+            ],
+
             'file' => [
                 'required',
                 'file',
@@ -33,14 +70,38 @@ class BatchController extends Controller
             ],
         ]);
 
+
+        /*
+        |--------------------------------------------------------------------------
+        | 2. AMBIL INFORMASI FILE
+        |--------------------------------------------------------------------------
+        */
+
         $file = $request->file('file');
 
         $namaFile = $file->getClientOriginalName();
 
-        // Cek apakah batch dengan tanggal + file yang sama sudah pernah diimport
-        $existingBatch = Batch::where('tanggal_data', $validated['tanggal_data'])
-            ->where('nama_file', $namaFile)
+
+        /*
+        |--------------------------------------------------------------------------
+        | 3. CEK DUPLIKASI BATCH
+        |--------------------------------------------------------------------------
+        |
+        | Satu file dengan tanggal data yang sama tidak boleh diimport
+        | dua kali.
+        |
+        */
+
+        $existingBatch = Batch::where(
+            'tanggal_data',
+            $validated['tanggal_data']
+        )
+            ->where(
+                'nama_file',
+                $namaFile
+            )
             ->first();
+
 
         if ($existingBatch) {
             return back()
@@ -50,40 +111,90 @@ class BatchController extends Controller
                 ->withInput();
         }
 
-        $batch = DB::transaction(function () use ($validated, $file, $namaFile) {
 
-            $batch = Batch::create([
-                'tanggal_data' => $validated['tanggal_data'],
-                'nama_file' => $namaFile,
-                'jumlah_data' => 0,
-            ]);
+        /*
+        |--------------------------------------------------------------------------
+        | 4. PROSES IMPORT DALAM DATABASE TRANSACTION
+        |--------------------------------------------------------------------------
+        |
+        | Jika import gagal di tengah jalan, perubahan database dibatalkan.
+        |
+        */
 
-            Excel::import(
-                new PesertaImport($batch->id),
-                $file
-            );
+        try {
 
-            $batch->update([
-                'jumlah_data' => $batch->pesertas()->count(),
-            ]);
+            $batch = DB::transaction(function () use (
+                $validated,
+                $file,
+                $namaFile
+            ) {
 
-            return $batch;
-        });
+                /*
+                |--------------------------------------------------------------------------
+                | Buat batch terlebih dahulu
+                |--------------------------------------------------------------------------
+                */
 
-        return redirect()
-            ->route('batches.create')
-            ->with(
-                'success',
-                "Import berhasil. Batch {$batch->id} berisi {$batch->jumlah_data} peserta."
-            );
-    }
-    /**
-     * Menampilkan detail satu batch beserta peserta.
-     */
-    public function show(Batch $batch)
-    {
-        $batch->load('pesertas');
+                $batch = Batch::create([
+                    'tanggal_data' => $validated['tanggal_data'],
+                    'nama_file' => $namaFile,
+                    'jumlah_data' => 0,
+                ]);
 
-        return view('batches.show', compact('batch'));
+
+                /*
+                |--------------------------------------------------------------------------
+                | Import peserta dari Excel
+                |--------------------------------------------------------------------------
+                */
+
+                Excel::import(
+                    new PesertaImport($batch->id),
+                    $file
+                );
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Hitung jumlah peserta yang berhasil masuk ke batch
+                |--------------------------------------------------------------------------
+                */
+
+                $batch->update([
+                    'jumlah_data' => $batch->pesertas()->count(),
+                ]);
+
+
+                return $batch;
+            });
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | 5. BERHASIL
+            |--------------------------------------------------------------------------
+            */
+
+            return redirect()
+                ->route('batches.show', $batch)
+                ->with(
+                    'success',
+                    "Import berhasil. Batch {$batch->id} berisi {$batch->jumlah_data} peserta."
+                );
+
+        } catch (\Throwable $e) {
+
+            /*
+            |--------------------------------------------------------------------------
+            | 6. JIKA IMPORT GAGAL
+            |--------------------------------------------------------------------------
+            */
+
+            return back()
+                ->withErrors([
+                    'file' => 'Import gagal: ' . $e->getMessage(),
+                ])
+                ->withInput();
+        }
     }
 }

@@ -23,7 +23,13 @@ class VerifikasiSipp extends Model
     protected $casts = [
         'tanggal_cek' => 'date',
         'tanggal_daftar_rehab' => 'date',
+
         'terdaftar_rehab' => 'boolean',
+
+        'tagihan_bulan_berjalan' => 'decimal:2',
+        'tagihan_sebelum_bulan_berjalan' => 'decimal:2',
+
+        'jumlah_peserta_sipp' => 'integer',
     ];
 
     public function peserta(): BelongsTo

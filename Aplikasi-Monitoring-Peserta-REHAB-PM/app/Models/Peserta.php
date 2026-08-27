@@ -40,6 +40,12 @@ class Peserta extends Model
         return $this->hasMany(VerifikasiSipp::class);
     }
 
+    public function verifikasiTerakhir()
+    {
+        return $this->hasOne(VerifikasiSipp::class)
+            ->latestOfMany();
+    }
+
     public function komunikasi(): HasMany
     {
         return $this->hasMany(Komunikasi::class);
