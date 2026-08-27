@@ -20,19 +20,21 @@ class PesertaImport implements ToCollection, WithHeadingRow
     {
         foreach ($rows as $row) {
 
-            // Abaikan baris yang tidak memiliki No Kartu
+            // Abaikan baris kosong / tanpa NOKA
             if (empty($row['noentitas'])) {
                 continue;
             }
 
             /*
-             * 1. Cari peserta berdasarkan NOKA.
-             *    Kalau belum ada → buat.
-             *    Kalau sudah ada → update data identitasnya.
+             * PESERTA
+             *
+             * NOKA menjadi identitas peserta.
+             * Jika NOKA sudah ada → update.
+             * Jika belum ada → create.
              */
             $peserta = Peserta::updateOrCreate(
                 [
-                    'noka' => $row['noentitas'],
+                    'noka' => (string) $row['noentitas'],
                 ],
                 [
                     'nama' => $row['namaentitas'] ?? null,
@@ -63,8 +65,9 @@ class PesertaImport implements ToCollection, WithHeadingRow
             );
 
             /*
-             * 2. Simpan snapshot data Excel
-             *    untuk batch/minggu tersebut.
+             * PESERTA BATCH
+             *
+             * Menyimpan snapshot data Excel pada batch tertentu.
              */
             PesertaBatch::updateOrCreate(
                 [
@@ -104,9 +107,6 @@ class PesertaImport implements ToCollection, WithHeadingRow
         }
     }
 
-    /**
-     * Mengubah serial date Excel menjadi format tanggal database.
-     */
     private function excelDate(mixed $value): ?string
     {
         if (empty($value)) {

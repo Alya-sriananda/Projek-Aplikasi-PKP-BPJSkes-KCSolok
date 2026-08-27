@@ -1,20 +1,19 @@
 <?php
 
-use App\Imports\PesertaImport;
 use Illuminate\Support\Facades\Route;
-use Maatwebsite\Excel\Facades\Excel;
-    Route::get('/test-import', function () {
-        return view('test-import');
-    });
-    Route::post('/test-import', function () {
-        request()->validate([
-            'file' => ['required', 'file', 'mimes:xlsx,xls,csv'],
-        ]);
+use App\Http\Controllers\BatchController;
 
-        Excel::import(
-            new PesertaImport,
-            request()->file('file')
-        );
+Route::get('/batches/import', [
+    BatchController::class,
+    'create'
+])->name('batches.create');
 
-        return 'Import selesai';
-    });
+Route::post('/batches/import', [
+    BatchController::class,
+    'store'
+])->name('batches.store');
+
+Route::get('/batches/{batch}', [
+    BatchController::class,
+    'show'
+])->name('batches.show');
