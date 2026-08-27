@@ -2,7 +2,6 @@
 <html lang="id">
 
 <head>
-
     <meta charset="UTF-8">
 
     <meta
@@ -15,7 +14,6 @@
     </title>
 
     <style>
-
         body {
             font-family: Arial, sans-serif;
             margin: 40px;
@@ -86,23 +84,35 @@
             margin-bottom: 20px;
         }
 
-    </style>
+        .section-title {
+            margin-top: 25px;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #ddd;
+        }
 
+        .previous-verification {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2563eb;
+        }
+    </style>
 </head>
 
 <body>
 
 <div class="container">
 
+    {{-- Tombol kembali --}}
     <div style="margin-bottom: 20px;">
-
         <a
             href="{{ url()->previous() }}"
             class="button button-back"
         >
             ← Kembali
         </a>
-
     </div>
 
 
@@ -112,6 +122,10 @@
             Verifikasi SIPP
         </h1>
 
+
+        {{-- =========================================================
+             INFORMASI PESERTA
+        ========================================================== --}}
         <div class="info">
 
             <p>
@@ -137,6 +151,64 @@
         </div>
 
 
+        {{-- =========================================================
+             VERIFIKASI TERAKHIR
+        ========================================================== --}}
+        @if($verifikasiTerakhir)
+
+            <div class="previous-verification">
+
+                <strong>
+                    Verifikasi SIPP Terakhir
+                </strong>
+
+                <p>
+                    Tanggal cek:
+                    {{ $verifikasiTerakhir->tanggal_cek?->format('d-m-Y') ?? '-' }}
+                </p>
+
+                <p>
+                    Terdaftar REHAB:
+                    {{ $verifikasiTerakhir->terdaftar_rehab ? 'Ya' : 'Tidak' }}
+                </p>
+
+                @if($verifikasiTerakhir->terdaftar_rehab)
+
+                    <p>
+                        Tanggal daftar REHAB:
+                        {{ $verifikasiTerakhir->tanggal_daftar_rehab?->format('d-m-Y') ?? '-' }}
+                    </p>
+
+                    <p>
+                        Jumlah peserta di SIPP:
+                        {{ $verifikasiTerakhir->jumlah_peserta_sipp ?? '-' }}
+                    </p>
+
+                    <p>
+                        Tagihan {{ $bulanSekarang }}:
+                        Rp {{ number_format($verifikasiTerakhir->tagihan_bulan_berjalan ?? 0, 0, ',', '.') }}
+                    </p>
+
+                    <p>
+                        Tagihan sebelum {{ $bulanSekarang }}:
+                        Rp {{ number_format($verifikasiTerakhir->tagihan_sebelum_bulan_berjalan ?? 0, 0, ',', '.') }}
+                    </p>
+
+                    <p>
+                        Status pembayaran {{ $bulanSekarang }}:
+                        {{ $verifikasiTerakhir->status_pembayaran_bulan_berjalan ?? '-' }}
+                    </p>
+
+                @endif
+
+            </div>
+
+        @endif
+
+
+        {{-- =========================================================
+             ERROR
+        ========================================================== --}}
         @if($errors->any())
 
             <div
@@ -165,6 +237,9 @@
         @endif
 
 
+        {{-- =========================================================
+             FORM VERIFIKASI
+        ========================================================== --}}
         <form
             method="POST"
             action="{{ route('verifikasi-sipp.store', $peserta) }}"
@@ -173,6 +248,7 @@
             @csrf
 
 
+            {{-- Tanggal cek --}}
             <div class="form-group">
 
                 <label for="tanggal_cek">
@@ -188,14 +264,17 @@
                 >
 
                 @error('tanggal_cek')
+
                     <div class="error">
                         {{ $message }}
                     </div>
+
                 @enderror
 
             </div>
 
 
+            {{-- Terdaftar REHAB --}}
             <div class="form-group">
 
                 <label for="terdaftar_rehab">
@@ -228,12 +307,28 @@
 
                 </select>
 
+                @error('terdaftar_rehab')
+
+                    <div class="error">
+                        {{ $message }}
+                    </div>
+
+                @enderror
+
             </div>
 
 
+            {{-- =====================================================
+                 DATA REHAB
+            ====================================================== --}}
             <div id="data-rehab">
 
+                <h3 class="section-title">
+                    Data REHAB
+                </h3>
 
+
+                {{-- Tanggal daftar --}}
                 <div class="form-group">
 
                     <label for="tanggal_daftar_rehab">
@@ -247,9 +342,18 @@
                         value="{{ old('tanggal_daftar_rehab') }}"
                     >
 
+                    @error('tanggal_daftar_rehab')
+
+                        <div class="error">
+                            {{ $message }}
+                        </div>
+
+                    @enderror
+
                 </div>
 
 
+                {{-- Jumlah peserta --}}
                 <div class="form-group">
 
                     <label for="jumlah_peserta_sipp">
@@ -261,16 +365,28 @@
                         id="jumlah_peserta_sipp"
                         name="jumlah_peserta_sipp"
                         min="1"
+                        step="1"
                         value="{{ old('jumlah_peserta_sipp') }}"
                     >
+
+                    @error('jumlah_peserta_sipp')
+
+                        <div class="error">
+                            {{ $message }}
+                        </div>
+
+                    @enderror
 
                 </div>
 
 
+                {{-- =================================================
+                     TAGIHAN BULAN BERJALAN
+                ================================================== --}}
                 <div class="form-group">
 
                     <label for="tagihan_bulan_berjalan">
-                        Tagihan Bulan Berjalan
+                        Tagihan Bulan {{ $bulanSekarang }}
                     </label>
 
                     <input
@@ -278,18 +394,33 @@
                         id="tagihan_bulan_berjalan"
                         name="tagihan_bulan_berjalan"
                         min="0"
-                        step="0.01"
+                        step="1"
                         value="{{ old('tagihan_bulan_berjalan') }}"
-                        placeholder="Contoh: 210000"
+                        placeholder="Contoh: 250000"
                     >
+
+                    <small>
+                        Masukkan nominal tanpa titik atau simbol Rp.
+                    </small>
+
+                    @error('tagihan_bulan_berjalan')
+
+                        <div class="error">
+                            {{ $message }}
+                        </div>
+
+                    @enderror
 
                 </div>
 
 
+                {{-- =================================================
+                     TAGIHAN SEBELUM BULAN BERJALAN
+                ================================================== --}}
                 <div class="form-group">
 
                     <label for="tagihan_sebelum_bulan_berjalan">
-                        Tagihan Sebelum Bulan Berjalan
+                        Tagihan Sebelum {{ $bulanSekarang }}
                     </label>
 
                     <input
@@ -297,18 +428,33 @@
                         id="tagihan_sebelum_bulan_berjalan"
                         name="tagihan_sebelum_bulan_berjalan"
                         min="0"
-                        step="0.01"
+                        step="1"
                         value="{{ old('tagihan_sebelum_bulan_berjalan', 0) }}"
                         placeholder="Contoh: 280000"
                     >
 
+                    <small>
+                        Isi 0 jika tidak ada tunggakan sebelum bulan {{ $bulanSekarang }}.
+                    </small>
+
+                    @error('tagihan_sebelum_bulan_berjalan')
+
+                        <div class="error">
+                            {{ $message }}
+                        </div>
+
+                    @enderror
+
                 </div>
 
 
+                {{-- =================================================
+                     STATUS PEMBAYARAN
+                ================================================== --}}
                 <div class="form-group">
 
                     <label for="status_pembayaran_bulan_berjalan">
-                        Status Pembayaran Bulan Berjalan
+                        Status Pembayaran Bulan {{ $bulanSekarang }}
                     </label>
 
                     <select
@@ -336,11 +482,20 @@
 
                     </select>
 
+                    @error('status_pembayaran_bulan_berjalan')
+
+                        <div class="error">
+                            {{ $message }}
+                        </div>
+
+                    @enderror
+
                 </div>
 
             </div>
 
 
+            {{-- Catatan --}}
             <div class="form-group">
 
                 <label for="catatan">
@@ -353,9 +508,18 @@
                     placeholder="Catatan hasil pengecekan SIPP..."
                 >{{ old('catatan') }}</textarea>
 
+                @error('catatan')
+
+                    <div class="error">
+                        {{ $message }}
+                    </div>
+
+                @enderror
+
             </div>
 
 
+            {{-- Submit --}}
             <button
                 type="submit"
                 class="button"
@@ -404,5 +568,4 @@
 </script>
 
 </body>
-
 </html>

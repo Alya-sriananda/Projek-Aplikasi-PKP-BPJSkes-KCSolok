@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use Carbon\Carbon;
 use App\Models\Peserta;
 use App\Models\VerifikasiSipp;
 use Illuminate\Http\Request;
@@ -12,19 +12,22 @@ class VerifikasiSippController extends Controller
     /**
      * Menampilkan form verifikasi SIPP.
      */
+    
     public function create(Peserta $peserta)
     {
-        /*
-        |--------------------------------------------------------------------------
-        | Ambil verifikasi terakhir jika sebelumnya sudah pernah diverifikasi
-        |--------------------------------------------------------------------------
-        */
-
         $verifikasiTerakhir = $peserta->verifikasiTerakhir;
+
+        Carbon::setLocale('id');
+
+        $bulanSekarang = Carbon::now()->translatedFormat('F Y');
 
         return view(
             'verifikasi-sipp.create',
-            compact('peserta', 'verifikasiTerakhir')
+            compact(
+                'peserta',
+                'verifikasiTerakhir',
+                'bulanSekarang'
+            )
         );
     }
 
@@ -118,6 +121,16 @@ class VerifikasiSippController extends Controller
 
         $validated['peserta_id'] = $peserta->id;
         $validated['user_id'] = Auth::id();
+
+        $validated['tagihan_bulan_berjalan'] =
+            isset($validated['tagihan_bulan_berjalan'])
+                ? round($validated['tagihan_bulan_berjalan'])
+                : null;
+
+        $validated['tagihan_sebelum_bulan_berjalan'] =
+            isset($validated['tagihan_sebelum_bulan_berjalan'])
+                ? round($validated['tagihan_sebelum_bulan_berjalan'])
+                : null;
 
         VerifikasiSipp::create($validated);
 
