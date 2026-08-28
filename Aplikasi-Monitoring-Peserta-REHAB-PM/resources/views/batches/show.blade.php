@@ -336,11 +336,15 @@
                             <div class="actions">
 
                                 <a
-                                    href="{{ route(
-                                        'verifikasi-sipp.create',
-                                        $peserta
-                                    ) }}"
-                                    class="button verify"
+                                    href="{{ route('peserta.show', $peserta) }}"
+                                    class="button"
+                                >
+                                    Detail
+                                </a>
+
+                                <a
+                                    href="{{ route('verifikasi-sipp.create', $peserta) }}"
+                                    class="button"
                                 >
                                     Verifikasi
                                 </a>

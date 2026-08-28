@@ -3,6 +3,12 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BatchController;
 use App\Http\Controllers\VerifikasiSippController;
 use App\Http\Controllers\TemplatePesanController;
+use App\Http\Controllers\PesertaController;
+
+Route::get('/peserta/{peserta}', [
+    PesertaController::class,
+    'show'
+])->name('peserta.show');
 
 Route::get('/batches', [
     BatchController::class,
