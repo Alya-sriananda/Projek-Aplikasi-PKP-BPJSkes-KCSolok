@@ -2,6 +2,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BatchController;
 use App\Http\Controllers\VerifikasiSippController;
+use App\Http\Controllers\TemplatePesanController;
 
 Route::get('/batches', [
     BatchController::class,
@@ -32,3 +33,18 @@ Route::post('/peserta/{peserta}/verifikasi-sipp', [
     VerifikasiSippController::class,
     'store'
 ])->name('verifikasi-sipp.store');
+
+Route::get('/template-pesan', [
+    TemplatePesanController::class,
+    'index'
+])->name('template-pesan.index');
+
+Route::get('/template-pesan/create', [
+    TemplatePesanController::class,
+    'create'
+])->name('template-pesan.create');
+
+Route::post('/template-pesan', [
+    TemplatePesanController::class,
+    'store'
+])->name('template-pesan.store');
