@@ -28,6 +28,12 @@ class PesertaBatch extends Model
         'tot_tag_sd_bulan_ini_awal',
 
         'user_sipp',
+
+        // Status proses
+        'status_proses',
+        'tanggal_proses',
+        'user_proses',
+        'catatan_proses',
     ];
 
     protected $casts = [
@@ -41,6 +47,8 @@ class PesertaBatch extends Model
         'tot_tag_bulan_berjalan_awal' => 'decimal:2',
         'tot_tag_menunggak_awal' => 'decimal:2',
         'tot_tag_sd_bulan_ini_awal' => 'decimal:2',
+
+        'tanggal_proses' => 'datetime',
     ];
 
     public function batch(): BelongsTo
@@ -51,5 +59,10 @@ class PesertaBatch extends Model
     public function peserta(): BelongsTo
     {
         return $this->belongsTo(Peserta::class);
+    }
+
+    public function userProses(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_proses');
     }
 }
