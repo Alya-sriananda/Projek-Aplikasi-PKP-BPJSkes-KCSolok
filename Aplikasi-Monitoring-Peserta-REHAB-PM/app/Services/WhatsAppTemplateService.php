@@ -3,91 +3,72 @@
 namespace App\Services;
 
 use App\Models\Peserta;
-use App\Models\VerifikasiSipp;
-use Carbon\Carbon;
+use App\Models\TemplateWhatsApp;
 
 class WhatsAppTemplateService
 {
+    /**
+     * Membuat pesan WhatsApp berdasarkan template
+     * dan data peserta.
+     */
     public function generate(
         Peserta $peserta,
-        VerifikasiSipp $verifikasi,
-        string $statusKode
+        TemplateWhatsApp $template
     ): string {
-        $bulan = Carbon::now()
-            ->locale('id')
-            ->translatedFormat('F Y');
+        $verifikasi = $peserta->verifikasiSipp()
+            ->latest('tanggal_cek')
+            ->first();
 
-        $nama = $peserta->nama;
+        $periode = app(PesertaStatusService::class)
+            ->periodeTagihan();
 
-        $tagihanBerjalan = $this->formatRupiah(
-            $verifikasi->tagihan_bulan_berjalan
+        $variables = [
+            '{{nama}}' => $peserta->nama ?? '',
+            '{{noka}}' => $peserta->noka ?? '',
+            '{{no_hp}}' => $peserta->no_hp ?? '',
+            '{{email}}' => $peserta->email ?? '',
+            '{{alamat}}' => $peserta->alamat ?? '',
+
+            '{{bulan_sebelumnya}}' =>
+                $periode['bulan_sebelumnya'],
+
+            '{{bulan_berjalan}}' =>
+                $periode['bulan_berjalan'],
+
+            '{{tagihan_bulan_sebelumnya}}' =>
+                $this->rupiah(
+                    $verifikasi?->tagihan_sebelum_bulan_berjalan
+                ),
+
+            '{{tagihan_bulan_berjalan}}' =>
+                $this->rupiah(
+                    $verifikasi?->tagihan_bulan_berjalan
+                ),
+
+            '{{tanggal_daftar_rehab}}' =>
+                $verifikasi?->tanggal_daftar_rehab?->format('d-m-Y') ?? '-',
+
+            '{{jumlah_peserta_sipp}}' =>
+                $verifikasi?->jumlah_peserta_sipp ?? '-',
+        ];
+
+        return strtr(
+            $template->isi_template,
+            $variables
         );
-
-        $tagihanSebelumnya = $this->formatRupiah(
-            $verifikasi->tagihan_sebelum_bulan_berjalan
-        );
-
-        /*
-        |--------------------------------------------------------------------------
-        | BELUM BAYAR BULAN BERJALAN
-        |--------------------------------------------------------------------------
-        */
-        if ($statusKode === 'belum_bayar_bulan_berjalan') {
-            return
-                "Yth. Bapak/Ibu {$nama},\n\n" .
-                "Kami mengingatkan terkait pembayaran iuran REHAB BPJS Kesehatan untuk bulan {$bulan}.\n\n" .
-                "Tagihan bulan {$bulan}: {$tagihanBerjalan}\n\n" .
-                "Mohon dapat melakukan pembayaran sesuai jadwal yang telah ditentukan.\n\n" .
-                "Terima kasih atas perhatian dan kerja samanya.";
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | TUNGGAKAN SEBELUMNYA + BELUM BAYAR BULAN BERJALAN
-        |--------------------------------------------------------------------------
-        */
-        if (
-            $statusKode ===
-            'tunggakan_sebelumnya_belum_bayar_berjalan'
-        ) {
-            return
-                "Yth. Bapak/Ibu {$nama},\n\n" .
-                "Kami mengingatkan terkait kewajiban pembayaran iuran REHAB BPJS Kesehatan.\n\n" .
-                "Saat ini masih terdapat tunggakan sebelum bulan {$bulan} sebesar {$tagihanSebelumnya} dan tagihan bulan {$bulan} sebesar {$tagihanBerjalan} yang belum dibayarkan.\n\n" .
-                "Mohon dapat melakukan pembayaran sesuai ketentuan yang berlaku.\n\n" .
-                "Terima kasih atas perhatian dan kerja samanya.";
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | TUNGGAKAN SEBELUMNYA
-        |--------------------------------------------------------------------------
-        */
-        if ($statusKode === 'tunggakan_sebelumnya') {
-            return
-                "Yth. Bapak/Ibu {$nama},\n\n" .
-                "Kami menginformasikan bahwa pembayaran iuran REHAB BPJS Kesehatan bulan {$bulan} telah tercatat.\n\n" .
-                "Namun, masih terdapat tunggakan sebelum bulan {$bulan} sebesar {$tagihanSebelumnya}.\n\n" .
-                "Mohon dapat melakukan penyelesaian atas tunggakan tersebut sesuai ketentuan yang berlaku.\n\n" .
-                "Terima kasih atas perhatian dan kerja samanya.";
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | FALLBACK
-        |--------------------------------------------------------------------------
-        */
-        return
-            "Yth. Bapak/Ibu {$nama},\n\n" .
-            "Kami ingin menyampaikan informasi terkait kepesertaan REHAB BPJS Kesehatan.\n\n" .
-            "Mohon dapat menghubungi petugas untuk informasi lebih lanjut.\n\n" .
-            "Terima kasih.";
     }
 
-    private function formatRupiah($nominal): string
+    /**
+     * Format angka menjadi Rupiah.
+     */
+    private function rupiah($nominal): string
     {
+        if ($nominal === null) {
+            return '-';
+        }
+
         return 'Rp ' . number_format(
-            (float) ($nominal ?? 0),
+            (float) $nominal,
             0,
             ',',
             '.'
