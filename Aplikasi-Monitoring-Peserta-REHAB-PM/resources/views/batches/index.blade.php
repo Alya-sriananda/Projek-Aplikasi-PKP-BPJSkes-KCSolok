@@ -1,103 +1,114 @@
 <!DOCTYPE html>
+
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Data Batch</title>
+<title>Data Batch - Monitoring Peserta REHAB</title>
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 40px;
-            background: #f5f6f8;
-        }
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 40px;
+        background: #f5f6f8;
+    }
 
-        .container {
-            max-width: 1100px;
-            margin: auto;
-        }
+    .container {
+        max-width: 1100px;
+        margin: auto;
+    }
 
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+    }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-        }
+    .card {
+        background: white;
+        padding: 25px;
+        border-radius: 8px;
+    }
 
-        th,
-        td {
-            padding: 12px;
-            border-bottom: 1px solid #ddd;
-            text-align: left;
-        }
+    .button {
+        display: inline-block;
+        padding: 10px 15px;
+        background: #2563eb;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+    }
 
-        th {
-            background: #f0f0f0;
-        }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
 
-        .button {
-            display: inline-block;
-            padding: 8px 12px;
-            background: #2563eb;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-        }
+    th,
+    td {
+        padding: 12px;
+        border-bottom: 1px solid #e5e7eb;
+        text-align: left;
+    }
 
-        .button:hover {
-            background: #1d4ed8;
-        }
-    </style>
+    th {
+        background: #f9fafb;
+    }
+
+    .success {
+        background: #dcfce7;
+        color: #166534;
+        padding: 12px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+
+    .empty {
+        text-align: center;
+        padding: 30px;
+        color: #6b7280;
+    }
+</style>
+
 </head>
 
 <body>
 
 <div class="container">
 
-    <div class="header">
-
-        <h1>Data Batch Peserta REHAB</h1>
-
-        <a
-            href="{{ route('batches.create') }}"
-            class="button"
-        >
-            + Import Excel
-        </a>
-
+<div class="header">
+    <div>
+        <h1>Data Batch</h1>
+        <p>Daftar import data peserta REHAB.</p>
     </div>
 
+    <a href="{{ route('batches.create') }}" class="button">
+        + Import Excel
+    </a>
+</div>
 
-    @if(session('success'))
+@if(session('success'))
+    <div class="success">
+        {{ session('success') }}
+    </div>
+@endif
 
-        <div style="padding: 12px; background: #dcfce7; margin-bottom: 20px;">
-            {{ session('success') }}
-        </div>
-
-    @endif
-
+<div class="card">
 
     @if($batches->count())
 
         <table>
 
             <thead>
-
                 <tr>
-                    <th>No</th>
+                    <th>ID</th>
                     <th>Tanggal Data</th>
                     <th>Nama File</th>
                     <th>Jumlah Peserta</th>
                     <th>Aksi</th>
                 </tr>
-
             </thead>
 
             <tbody>
@@ -107,7 +118,7 @@
                     <tr>
 
                         <td>
-                            {{ $batches->firstItem() + $loop->index }}
+                            {{ $batch->id }}
                         </td>
 
                         <td>
@@ -123,14 +134,12 @@
                         </td>
 
                         <td>
-
                             <a
                                 href="{{ route('batches.show', $batch) }}"
                                 class="button"
                             >
                                 Lihat Peserta
                             </a>
-
                         </td>
 
                     </tr>
@@ -141,19 +150,19 @@
 
         </table>
 
-
         <div style="margin-top: 20px;">
             {{ $batches->links() }}
         </div>
 
     @else
 
-        <p>
+        <div class="empty">
             Belum ada data batch.
-        </p>
+        </div>
 
     @endif
 
+</div>
 </div>
 
 </body>
