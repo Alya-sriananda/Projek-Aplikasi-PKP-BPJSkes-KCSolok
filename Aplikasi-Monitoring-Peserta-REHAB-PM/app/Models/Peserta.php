@@ -41,19 +41,23 @@ class Peserta extends Model
         return $this->hasMany(VerifikasiSipp::class);
     }
 
+    public function komunikasi(): HasMany
+    {
+        return $this->hasMany(Komunikasi::class);
+    }
+
     public function verifikasiTerakhir(): HasOne
     {
         return $this->hasOne(VerifikasiSipp::class)
             ->latestOfMany('tanggal_cek');
     }
-    // public function verifikasiTerakhir()
-    // {
-    //     return $this->hasOne(VerifikasiSipp::class)
-    //         ->latestOfMany();
-    // }
 
-    public function komunikasi(): HasMany
+    /**
+     * Peserta lain yang menggunakan nomor HP yang sama.
+     */
+    public function anggotaKeluarga()
     {
-        return $this->hasMany(Komunikasi::class);
+        return $this->hasMany(Peserta::class, 'no_hp', 'no_hp')
+            ->where('id', '!=', $this->id);
     }
 }

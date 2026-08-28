@@ -477,6 +477,18 @@
                         </td>
 
                         <td>
+                            <a
+                                href="{{ route(
+                                    'monitoring.show',
+                                    [
+                                        'batch' => $batch,
+                                        'peserta' => $peserta->id,
+                                    ]
+                                ) }}"
+                                class="button button-secondary"
+                            >
+                                Detail
+                            </a>
 
                             <a
                                 href="{{ route(

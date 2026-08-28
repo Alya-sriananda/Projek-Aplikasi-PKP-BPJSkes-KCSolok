@@ -70,3 +70,8 @@ Route::get('/batches/{batch}/monitoring', [
     MonitoringController::class,
     'index'
 ])->name('monitoring.index');
+
+Route::get('/batches/{batch}/monitoring/peserta/{peserta}', [
+    MonitoringController::class,
+    'show'
+])->name('monitoring.show');

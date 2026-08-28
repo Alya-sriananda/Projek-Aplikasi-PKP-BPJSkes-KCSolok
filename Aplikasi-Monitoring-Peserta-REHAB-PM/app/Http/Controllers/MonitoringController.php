@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Batch;
+use App\Models\Peserta;
 use App\Services\PesertaStatusService;
 use Illuminate\Http\Request;
 
@@ -134,6 +135,73 @@ class MonitoringController extends Controller
                 'pesertas',
                 'periode',
                 'statistik'
+            )
+        );
+        
+    }
+    /**
+     * Menampilkan detail peserta.
+     */
+    public function show(Batch $batch, $peserta)
+    {
+        $peserta = $batch->pesertas()
+            ->with([
+                'verifikasiSipp' => function ($query) {
+                    $query->latest('tanggal_cek');
+                },
+                'verifikasiTerakhir',
+            ])
+            ->where('pesertas.id', $peserta)
+            ->firstOrFail();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Ambil anggota keluarga berdasarkan nomor HP
+        |--------------------------------------------------------------------------
+        */
+        $anggotaKeluarga = collect();
+
+        if (!empty($peserta->no_hp)) {
+            $anggotaKeluarga = Peserta::where('no_hp', $peserta->no_hp)
+                ->where('id', '!=', $peserta->id)
+                ->with('verifikasiTerakhir')
+                ->orderBy('nama')
+                ->get();
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Tentukan status peserta utama
+        |--------------------------------------------------------------------------
+        */
+        $peserta->status_monitoring =
+            $this->statusService->tentukan($peserta);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Tentukan status anggota keluarga
+        |--------------------------------------------------------------------------
+        */
+        $anggotaKeluarga->each(function ($anggota) {
+
+            $anggota->status_monitoring =
+                $this->statusService->tentukan($anggota);
+        });
+
+        /*
+        |--------------------------------------------------------------------------
+        | Periode tagihan
+        |--------------------------------------------------------------------------
+        */
+        $periode = $this->statusService->periodeTagihan();
+
+        return view(
+            'monitoring.show',
+            compact(
+                'batch',
+                'peserta',
+                'anggotaKeluarga',
+                'periode'
             )
         );
     }
