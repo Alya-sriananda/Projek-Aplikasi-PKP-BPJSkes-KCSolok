@@ -46,6 +46,15 @@ class Peserta extends Model
         return $this->hasMany(Komunikasi::class);
     }
 
+    /**
+     * Komunikasi terakhir peserta.
+     */
+    public function komunikasiTerakhir(): HasOne
+    {
+        return $this->hasOne(Komunikasi::class)
+            ->latestOfMany('tanggal_dihubungi');
+    }
+
     public function verifikasiTerakhir(): HasOne
     {
         return $this->hasOne(VerifikasiSipp::class)

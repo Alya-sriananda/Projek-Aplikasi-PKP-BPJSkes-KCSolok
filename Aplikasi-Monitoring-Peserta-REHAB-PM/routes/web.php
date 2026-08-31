@@ -4,6 +4,7 @@ use App\Http\Controllers\BatchController;
 use App\Http\Controllers\VerifikasiSippController;
 use App\Http\Controllers\TemplatePesanController;
 use App\Http\Controllers\PesertaController;
+use App\Http\Controllers\TindakLanjutController;
 
 Route::get('/peserta/{peserta}', [
     PesertaController::class,
@@ -54,3 +55,8 @@ Route::post('/template-pesan', [
     TemplatePesanController::class,
     'store'
 ])->name('template-pesan.store');
+
+Route::get('/tindak-lanjut', [
+    TindakLanjutController::class,
+    'index'
+])->name('tindak-lanjut.index');

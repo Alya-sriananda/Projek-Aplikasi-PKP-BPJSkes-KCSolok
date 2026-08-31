@@ -22,11 +22,17 @@ class Komunikasi extends Model
         'tanggal_dihubungi' => 'datetime',
     ];
 
+    /**
+     * Peserta yang dihubungi.
+     */
     public function peserta(): BelongsTo
     {
         return $this->belongsTo(Peserta::class);
     }
 
+    /**
+     * User/petugas yang melakukan komunikasi.
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
