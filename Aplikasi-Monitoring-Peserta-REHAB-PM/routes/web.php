@@ -5,6 +5,7 @@ use App\Http\Controllers\VerifikasiSippController;
 use App\Http\Controllers\TemplatePesanController;
 use App\Http\Controllers\PesertaController;
 use App\Http\Controllers\TindakLanjutController;
+use App\Http\Controllers\KomunikasiController;
 
 Route::get('/peserta/{peserta}', [
     PesertaController::class,
@@ -60,3 +61,14 @@ Route::get('/tindak-lanjut', [
     TindakLanjutController::class,
     'index'
 ])->name('tindak-lanjut.index');
+
+Route::get(
+    '/peserta/{peserta}/komunikasi',
+    [KomunikasiController::class, 'create']
+)->name('komunikasi.create');
+
+
+Route::post(
+    '/peserta/{peserta}/komunikasi',
+    [KomunikasiController::class, 'store']
+)->name('komunikasi.store');

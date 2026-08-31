@@ -9,24 +9,21 @@ use Illuminate\Support\Collection;
 class TindakLanjutService
 {
     /**
-     * Mendapatkan daftar peserta yang harus ditindaklanjuti
+     * Mendapatkan peserta yang masih harus ditindaklanjuti
      * pada batch tertentu.
-     *
-     * Aturan:
-     *
-     * 1. Peserta baru pada batch tersebut → masuk.
-     * 2. Peserta lama yang belum pernah diproses → masuk.
-     * 3. Peserta yang sudah pernah diproses → tidak masuk.
      */
-    public function pesertaYangHarusDitindaklanjuti(Batch $batch): Collection
-    {
+    public function pesertaYangHarusDitindaklanjuti(
+        Batch $batch
+    ): Collection {
+
         $pesertaBatch = $batch->pesertas()
             ->with([
                 'verifikasiSipp' => function ($query) {
                     $query->latest('tanggal_cek');
                 },
+
                 'komunikasi' => function ($query) {
-                    $query->latest();
+                    $query->latest('tanggal_dihubungi');
                 },
             ])
             ->get();
@@ -35,9 +32,15 @@ class TindakLanjutService
             ->filter(function (Peserta $peserta) {
                 return $this->harusDitindaklanjuti($peserta);
             })
-            ->map(function (Peserta $peserta) {
+            ->map(function (Peserta $peserta) use ($batch) {
                 $peserta->kategori_tindak_lanjut =
-                    $this->tentukanKategori($peserta);
+                    $this->tentukanKategori(
+                        $peserta,
+                        $batch
+                    );
+
+                $peserta->status_proses =
+                    $this->tentukanStatusProses($peserta);
 
                 return $peserta;
             })
@@ -45,41 +48,83 @@ class TindakLanjutService
     }
 
     /**
-     * Menentukan apakah peserta masih harus diproses.
+     * Menentukan apakah peserta masih harus ditindaklanjuti.
      */
-    public function harusDitindaklanjuti(Peserta $peserta): bool
-    {
+    public function harusDitindaklanjuti(
+        Peserta $peserta
+    ): bool {
+
         /*
-         * Belum pernah diverifikasi SIPP
-         * berarti peserta belum diproses.
+         * Jika belum pernah dihubungi,
+         * peserta masih masuk daftar tindak lanjut.
          */
-        if ($peserta->verifikasiSipp->isEmpty()) {
+        if ($peserta->komunikasi->isEmpty()) {
             return true;
         }
 
         /*
-         * Jika sudah pernah diverifikasi,
-         * kita anggap sudah diproses.
+         * Jika sudah pernah dihubungi,
+         * dianggap selesai.
          */
         return false;
     }
-
+    
     /**
-     * Menentukan kategori peserta.
+     * Menentukan apakah peserta baru atau peserta lama
+     * yang belum selesai diproses.
      */
-    public function tentukanKategori(Peserta $peserta): string
-    {
-        /*
-         * Jika hanya muncul pada satu batch,
-         * berarti peserta baru.
-         */
-        $jumlahBatch = $peserta->batches()->count();
+    public function tentukanKategori(
+        Peserta $peserta,
+        Batch $batch
+    ): string {
 
-        if ($jumlahBatch <= 1) {
+        $pernahAdaSebelumnya = $peserta->batches()
+            ->where(
+                'batches.tanggal_data',
+                '<',
+                $batch->tanggal_data
+            )
+            ->exists();
+
+        if (!$pernahAdaSebelumnya) {
             return 'peserta_baru';
         }
 
         return 'peserta_lama_belum_diproses';
     }
-}
 
+
+    /**
+     * Menentukan posisi proses peserta.
+     */
+    public function tentukanStatusProses(
+        Peserta $peserta
+    ): string {
+
+        /*
+         * Belum pernah verifikasi.
+         */
+        if ($peserta->verifikasiSipp->isEmpty()) {
+
+            return 'belum_verifikasi';
+
+        }
+
+
+        /*
+         * Sudah verifikasi,
+         * tetapi belum komunikasi.
+         */
+        if ($peserta->komunikasi->isEmpty()) {
+
+            return 'siap_dihubungi';
+
+        }
+
+
+        /*
+         * Sudah komunikasi.
+         */
+        return 'selesai';
+    }
+}
